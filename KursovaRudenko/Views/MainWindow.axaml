@@ -1,0 +1,255 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:KursovaRudenko.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1150" d:DesignHeight="800"
+        x:Class="KursovaRudenko.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="N-Queens Solver &amp; Heuristic Visualizer"
+        Background="#0D0D0D"
+        Width="1150" Height="800"
+        WindowStartupLocation="CenterScreen">
+
+    <!-- Загальна сітка: Ліва колонка для меню (340px), Права — для шахівниці -->
+    <Grid ColumnDefinitions="340, *">
+        
+        <!-- ================= ЛІВА ПАНЕЛЬ КЕРУВАННЯ ================= -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" Spacing="14">
+                
+                <!-- 1. РОЗМІР ДОШКИ -->
+                <TextBlock Text="Розмір дошки (N):" 
+                           FontWeight="Bold" FontSize="18" Foreground="White"/>
+                
+                <NumericUpDown Value="{Binding BoardSize}" 
+                               Minimum="1" Maximum="100000" 
+                               Foreground="White" Background="#1A1A1A"
+                               BorderBrush="#333333" FontSize="16"/>
+
+                <!-- 2. БЛОК КІЛЬКОСТІ РОЗВ'ЯЗКІВ (ВСІ ТА УНІКАЛЬНІ) -->
+                <Border BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Кількість розв'язків:" 
+                                   FontWeight="Bold" Foreground="Khaki" FontSize="14"/>
+                        
+                        <TextBlock Text="{Binding SolutionsCountMessage}" 
+                                   Foreground="Silver" FontWeight="Bold" FontSize="13"
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Text="{Binding UniqueSolutionsCountMessage}" 
+                                   Foreground="Silver" FontWeight="Bold" FontSize="13"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 3. СТАНДАРТНІ КНОПКИ РОЗРАХУНКУ -->
+                <Button Content="Створити дошку" 
+                        Command="{Binding CreateBoardCommand}" 
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="#2D2D2D" Foreground="White" 
+                        FontSize="15" Padding="8" CornerRadius="4"/>
+
+                <Button Content="Евристика (Швидкий розрахунок)" 
+                        Command="{Binding SolveMinConflictsCommand}" 
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="#967155" Foreground="White" 
+                        FontWeight="Bold" FontSize="14" Padding="8" CornerRadius="4"/>
+
+                <Button Content="Математичний підхід" 
+                        Command="{Binding SolveMathCommand}" 
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="#967155" Foreground="White" 
+                        FontWeight="Bold" FontSize="14" Padding="8" CornerRadius="4"/>
+
+                <Separator Background="#333333" Margin="0,3"/>
+
+                <!-- 4. НОВИЙ БЛОК: КЕРУВАННЯ ВІЗУАЛІЗАЦІЄЮ ТА ЕВРИСТИКОЮ -->
+                <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="6" Padding="12" Background="#141414">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Наочна симуляція евристики" 
+                                   FontWeight="Bold" FontSize="14" Foreground="Khaki"/>
+
+                        <!-- Повзунок затримки (швидкості анімації) -->
+                        <TextBlock Text="{Binding AnimationSpeedMs, StringFormat='Затримка кроку: {0} мс'}" 
+                                   FontSize="12" Foreground="Silver"/>
+                        
+                        <Slider Minimum="50" Maximum="1500" 
+                                Value="{Binding AnimationSpeedMs}" 
+                                TickFrequency="50" IsSnapToTickEnabled="True" />
+
+                        <!-- Кнопка запуску симуляції -->
+                        <Button Content="Почати симуляцію" 
+                                Command="{Binding StartVisualSimulationCommand}" 
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Background="#FFFFFF" Foreground="Black" 
+                                FontWeight="Bold" Height="36" CornerRadius="4"/>
+
+                        <!-- Кнопки: Пауза та Покроковий перехід -->
+                        <Grid ColumnDefinitions="*, *">
+                            <Button Grid.Column="0" 
+                                    Content="{Binding PauseResumeButtonText}" 
+                                    Command="{Binding TogglePauseCommand}" 
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                    Margin="0,0,4,0" Background="#333333" Foreground="White" CornerRadius="4"/>
+
+                            <Button Grid.Column="1" 
+                                    Content="Крок ➔" 
+                                    Command="{Binding StepForwardCommand}" 
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                    Margin="4,0,0,0" Background="#333333" Foreground="White" CornerRadius="4"/>
+                        </Grid>
+
+                        <!-- Кнопка зупинки -->
+                        <Button Content="Зупинити симуляцію" 
+                                Command="{Binding StopSimulationCommand}" 
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Background="#B35454" Foreground="White" Height="30" FontSize="12" CornerRadius="4"/>
+
+                        <Button Content="Зупинити крок" 
+                                Command="{Binding StopSimulationCommand}" 
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Background="#B35454" Foreground="White" Height="30" FontSize="12" CornerRadius="4"/>
+
+                        <Separator Background="#333333" Margin="0,4"/>
+
+                        <!-- Текстовий статус поточної дії -->
+                        <TextBlock Text="Поточна дія:" FontSize="11" Foreground="Gray"/>
+                        <TextBlock Text="{Binding CurrentStepDescription}" 
+                                   Foreground="LightGoldenrodYellow" FontSize="12" FontWeight="SemiBold" 
+                                   TextWrapping="Wrap" MinHeight="34"/>
+                    </StackPanel>
+                </Border>
+
+                <Separator Background="#333333" Margin="0,3"/>
+
+                <!-- 5. СТАТИСТИКА ВИКОНАННЯ -->
+                <TextBlock Text="{Binding ExecutionTimeMessage}" 
+                           Foreground="Silver" FontWeight="Bold" FontSize="13" TextWrapping="Wrap"/>
+                
+                <TextBlock Text="{Binding AverageTimeMessage}" 
+                           Foreground="Silver" FontWeight="Bold" FontSize="13" TextWrapping="Wrap"/>
+                           
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================= ПРАВА ПАНЕЛЬ: ШАХІВНИЦЯ ================= -->
+        <Viewbox Grid.Column="1" Margin="20" Stretch="Uniform">
+            <!-- Рамка навколо всієї дошки -->
+            <Border BorderBrush="#222222" BorderThickness="3">
+                
+                <Panel>
+                    
+                <ItemsControl ItemsSource="{Binding Cells}">
+                    
+                    <!-- Сітка UniformGrid під поточний розмір N -->
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="{Binding BoardSize}" Columns="{Binding BoardSize}"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    
+                    <!-- ШАБЛОН ОКРЕМОЇ КЛІТИНКИ -->
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Клітинка з плавними переходами фону та затемнення -->
+                            <Border Width="60" Height="60" 
+                                    Background="{Binding BackgroundColor}"
+                                    Opacity="{Binding CellOpacity}"
+                                    BorderBrush="#222222" BorderThickness="0.5">
+                                
+                                <!-- ПЛАВНІ ПЕРЕХОДИ КЛІТИНКИ -->
+                                <Border.Transitions>
+                                    <Transitions>
+                                        <!-- Плавна зміна кольору (при конфлікті або виборі) -->
+                                        <BrushTransition Property="Background" Duration="0:0:0.3" />
+                                        <!-- Плавне затемнення (opacity 1.0 -> 0.3) -->
+                                        <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
+                                    </Transitions>
+                                </Border.Transitions>
+
+                                <!-- Контейнер Panel: дозволяє накласти цифру оцінки та ферзя -->
+                                <Panel>
+                                    
+                             
+                                    
+                                    
+                                    
+                                    
+
+                                    <!-- 2. СИМВОЛ ФЕРЗЯ З АНІМАЦІЄЮ ЗБІЛЬШЕННЯ ТА ПРОЯВУ -->
+                                    <TextBlock Text="♛" 
+                                               FontSize="44" Foreground="Black"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Opacity="{Binding QueenOpacity}"
+                                               IsVisible="{Binding HasQueen}"
+                                               RenderTransformOrigin="50%,50%">
+                                        
+                                        <!-- Початковий масштаб -->
+                                        <TextBlock.RenderTransform>
+                                            <ScaleTransform ScaleX="{Binding QueenScale}" 
+                                                            ScaleY="{Binding QueenScale}" />
+                                        </TextBlock.RenderTransform>
+
+                                        <!-- ПЛАВНІ ПЕРЕХОДИ ФЕРЗЯ -->
+                                        <TextBlock.Transitions>
+                                            <Transitions>
+                                                <!-- Плавне зникнення / поява -->
+                                                <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+                                                <!-- Пружне збільшення масштабу при появі -->
+                                                <TransformOperationsTransition Property="RenderTransform" 
+                                                                               Duration="0:0:0.3" 
+                                                                               Easing="BackEaseOut" />
+                                            </Transitions>
+                                        </TextBlock.Transitions>
+                                    </TextBlock>
+                                    
+                                    <Border Background="#CC000000" 
+                                            CornerRadius="10" 
+                                            MinWidth="18" Height="18"
+                                            Padding="3,0"
+                                            HorizontalAlignment="Right" 
+                                            VerticalAlignment="Top" 
+                                            Margin="2"
+                                            IsVisible="{Binding HasConflictWeight}">
+        
+                                        <TextBlock Text="{Binding ConflictWeight}" 
+                                                   FontSize="11" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="Yellow" 
+                                                   HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+
+                                </Panel>
+                                
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    
+                </ItemsControl>
+                    
+                    <ItemsControl ItemsSource="{Binding AttackArrows}" IsHitTestVisible="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Тонка пунктирна лінія атаки зі сяйвом -->
+                                <Line StartPoint="{Binding StartPoint}" 
+                                      EndPoint="{Binding EndPoint}"
+                                      Stroke="HotPink" 
+                                      StrokeThickness="2.5" 
+                                      StrokeDashArray="5,3" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Panel>
+            </Border>
+        </Viewbox>
+        
+    </Grid>
+</Window>
